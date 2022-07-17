@@ -1,0 +1,1 @@
+DB_NAME = "coin_control_db.fs"
