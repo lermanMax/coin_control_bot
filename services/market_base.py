@@ -67,7 +67,7 @@ class Coin(Persistent):
         self.name = name.lower()
         self.alter_names = PersistentDict()
 
-    def get_apper_name(self, market: Market = None) -> str:
+    def get_upper_name(self, market: Market = None) -> str:
         name = self.get_name(market)
         return name.upper()
 
@@ -99,14 +99,20 @@ class Cup(NamedTuple):
 
 
 class Price(NamedTuple):
+    coin: Coin
+    number: float
+    base_coin: Coin
+
+
+class BestPrice(NamedTuple):
     """цена на покупку и продажу
     bid - заявка на покупку
     ask - просят за продажу
     best_ask - лучшая цена за которую сейчас я могу купить
     best_bid - лучшая цена за которую сейчас я могу продать
     """
-    best_bid: float
-    best_ask: float
+    best_ask: Price
+    best_bid: Price
 
 
 class Market:
@@ -132,7 +138,7 @@ class Market:
         self.name = name
         self.__class__.all_markets.append(self)
 
-    def get_price(self, coin: Coin, base_coin: Coin = None) -> Price:
+    def get_price(self, coin: Coin, base_coin: Coin = None) -> BestPrice:
         """выдает цену койна в базовой валюте
 
         Args:
@@ -143,7 +149,7 @@ class Market:
             CoinNotFound: ранок не найден на бирже
 
         Returns:
-            Price: цена на покупку и продажу
+            BestPrice: цена на покупку и продажу
         """
         if not base_coin:
             base_coin = self.usdt_coin
@@ -163,7 +169,10 @@ class Market:
         else:
             best_bid = 0.0
 
-        return Price(best_bid, best_ask)
+        return BestPrice(
+            best_ask=Price(coin=coin, number=best_ask, base_coin=base_coin),
+            best_bid=Price(coin=coin, number=best_bid, base_coin=base_coin)
+        )
 
     def get_asks(
             self, coin: Coin,
@@ -191,3 +200,8 @@ class Market:
             [CupEntry(0.0, 0.0), CupEntry(0.0, 0.0)],
             [CupEntry(0.0, 0.0), CupEntry(0.0, 0.0)]
         )
+
+    # переопределить в потомках
+    def make_link_to_market(self, coin: Coin, base_coin: Coin) -> str:
+        log.error('make_link_to_market from Market')
+        return f'https://exemple.com/{coin.get_name()}_{base_coin.get_name()}'

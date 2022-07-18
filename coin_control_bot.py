@@ -166,7 +166,8 @@ async def callback_all_prices(
     market_list = Market.all_markets
     for market in market_list:
         try:
-            text_price = f'{market.get_price(coin).best_ask}$'
+            price = market.get_price(coin).best_ask
+            text_price = f'{price.number} {price.base_coin.get_name()}'
         except CoinNotFound:
             text_price = 'not_found'
         text += f'{market.name} - {text_price}\n'

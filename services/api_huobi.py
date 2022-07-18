@@ -22,3 +22,7 @@ class Huobi(Market):
         bids = [CupEntry(entry.price, entry.amount) for entry in depth.bids]
 
         return Cup(asks, bids)
+
+    def make_link_to_market(self, coin: Coin, base_coin: Coin) -> str:
+        market_name = f'{coin.get_name()}_{base_coin.get_name()}'
+        return f'https://www.huobi.com/exchange/{market_name}'
