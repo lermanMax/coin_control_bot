@@ -1,0 +1,4 @@
+[submodule "huobi_Python"]
+	path = huobi_Python
+	url = https://github.com/HuobiRDCenter/huobi_Python
+	branch = master
