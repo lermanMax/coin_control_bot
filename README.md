@@ -1,4 +1,4 @@
-Coin control bot
+#Coin control bot
 
 installation:
 
