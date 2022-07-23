@@ -102,6 +102,7 @@ class Price(NamedTuple):
     coin: Coin
     number: float
     base_coin: Coin
+    market: Market
 
 
 class BestPrice(NamedTuple):
@@ -133,6 +134,101 @@ class Market:
             if market.name == name:
                 return market
         return None
+
+    @classmethod
+    def get_best_price(cls, coin: Coin) -> BestPrice:
+        """Ищет лучшую цену среди всех маркетов
+
+        Args:
+            coin (Coin): монета, цена которой интересует
+
+        Raises:
+            CoinNotFound: монета ни где не найдена
+
+        Returns:
+            BestPrice: цена на покупку и продажу
+        """
+        best_ask = None
+        best_bid = None
+        for market in cls.all_markets:
+            for base_coin in cls.base_coins:
+                try:
+                    price = market.get_price(coin, base_coin)
+                except CoinNotFound:
+                    continue
+
+                if not best_bid:
+                    best_ask = price.best_ask
+                    best_bid = price.best_bid
+                    continue
+
+                if price.best_ask.number < best_ask.number:
+                    best_ask = price.best_ask
+                if price.best_bid.number > best_bid.number:
+                    best_bid = price.best_bid
+
+        if not best_bid:
+            raise CoinNotFound
+
+        return BestPrice(best_ask=best_ask, best_bid=best_bid)
+
+    @classmethod
+    def find_couple_for_best_deal(cls, coin: Coin) -> BestPrice:
+        """ находит лучшую цену с достаточным объемом
+        Raises:
+            CoinNotFound: монета не существует ни где
+
+        Returns:
+            BestPrice: цена на покупку и продажу
+            None: нет хорошего предложения
+        """
+        target_size = 500  # $
+        minimal_profit = 0.02  # %
+
+        prices = cls.get_best_price(coin)
+        if not prices:
+            return
+        if ((prices.best_bid.number / prices.best_ask.number)
+                < (1 + minimal_profit)):
+            return
+
+        asks = prices.best_ask.market.get_asks(
+            coin=coin,
+            base_coin=prices.best_ask.base_coin,
+            depth=100
+        )
+        ask_size = 0
+        ask_count = 0
+        for entry in asks:
+            target_count_coins = (target_size - ask_size)/entry.price
+            if entry.amount < target_count_coins:
+                ask_size += entry.price * entry.amount
+                ask_count += entry.amount
+            else:
+                ask_size += entry.price * target_count_coins
+                ask_count += target_count_coins
+                break
+
+        bids = prices.best_bid.market.get_bids(
+            coin=coin,
+            base_coin=prices.best_bid.base_coin,
+            depth=100
+        )
+        bid_size = 0
+        bid_count = ask_count
+        for entry in bids:
+            if entry.amount < bid_count:
+                bid_size += entry.price * entry.amount
+                bid_count -= entry.amount
+            else:
+                bid_size += entry.price * bid_count
+                bid_count = 0
+                break
+
+        if (bid_size / ask_size) < (1 + minimal_profit):
+            return
+
+        return prices
 
     def __init__(self, name: str) -> None:
         self.name = name
@@ -170,8 +266,10 @@ class Market:
             best_bid = 0.0
 
         return BestPrice(
-            best_ask=Price(coin=coin, number=best_ask, base_coin=base_coin),
-            best_bid=Price(coin=coin, number=best_bid, base_coin=base_coin)
+            best_ask=Price(
+                coin=coin, number=best_ask, base_coin=base_coin, market=self),
+            best_bid=Price(
+                coin=coin, number=best_bid, base_coin=base_coin, market=self)
         )
 
     def get_asks(
