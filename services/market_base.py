@@ -234,7 +234,7 @@ class Market:
         self.name = name
         self.__class__.all_markets.append(self)
 
-    def get_price(self, coin: Coin, base_coin: Coin = None) -> BestPrice:
+    def get_price(self, coin: Coin, base_coin: Coin) -> BestPrice:
         """выдает цену койна в базовой валюте
 
         Args:
@@ -247,9 +247,6 @@ class Market:
         Returns:
             BestPrice: цена на покупку и продажу
         """
-        if not base_coin:
-            base_coin = self.usdt_coin
-
         try:
             cup = self.get_cup(coin, base_coin)
         except Exception:

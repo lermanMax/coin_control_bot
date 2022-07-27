@@ -148,21 +148,6 @@ buttons_for_coin = [
     button_delete]
 
 
-async def send_price(chat_id: int, coin: Coin):
-    log.info('send_price to: %r', chat_id)
-
-    text = f'<b>{coin.get_upper_name()}</b>\n'
-    market_list = Market.all_markets
-    for market in market_list:
-        try:
-            text_price = f'{market.get_price(coin).best_ask}$'
-        except CoinNotFound:
-            text_price = 'not_found'
-        text += f'{market.name} - {text_price}\n'
-
-    await bot.send_message(chat_id=chat_id, text=text)
-
-
 @dp.callback_query_handler(
     button_cb.filter(answer=button_all_prices),
     state='*')
@@ -178,12 +163,17 @@ async def callback_all_prices(
         return
 
     text = f'<b>{coin.get_upper_name()}</b>\n'
-    market_list = Market.all_markets
-    for market in market_list:
-        try:
-            price = market.get_price(coin).best_ask
-            text_price = f'{price.number} {price.base_coin.get_name()}'
-        except CoinNotFound:
+    for market in Market.all_markets:
+        text_price = None
+        for base_coin in Market.base_coins:
+            try:
+                price = market.get_price(coin, base_coin).best_ask
+                text_price = f'{price.number} {price.base_coin.get_name()}'
+                break
+            except CoinNotFound:
+                continue
+
+        if not text_price:
             text_price = 'not_found'
         text += f'{market.name} - {text_price}\n'
 
