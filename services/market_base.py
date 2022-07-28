@@ -31,6 +31,14 @@ class Coin(Persistent):
 
     @classmethod
     def new_coin(cls, name: str) -> Coin:
+        """Adding coin and saveing it in memory.
+
+        Args:
+            name (str): _description_
+
+        Returns:
+            Coin: _description_
+        """
         coin = cls.get_coin_by_name(name)
         if coin:
             return coin
@@ -63,9 +71,12 @@ class Coin(Persistent):
     def get_all_coins(cls) -> List[Coin]:
         return cls._all_coins
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, alter_names: dict = {}):
         self.name = name.lower()
         self.alter_names = PersistentDict()
+
+        for market_name, name in alter_names.items():
+            self.alter_names[market_name] = name
 
     def get_upper_name(self, market: Market = None) -> str:
         name = self.get_name(market)

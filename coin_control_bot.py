@@ -1,3 +1,4 @@
+from __future__ import annotations
 import logging
 import typing
 
@@ -6,16 +7,13 @@ from aiogram.types import Message, \
     ReplyKeyboardMarkup, ReplyKeyboardRemove, KeyboardButton, \
     InlineKeyboardMarkup, InlineKeyboardButton, \
     CallbackQuery
-from aiogram.utils import callback_data, exceptions
+from aiogram.utils import callback_data
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.types.message import ContentType
 
-from datetime import datetime, timedelta
-from pytz import timezone
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.date import DateTrigger
 
 # Import modules of this project
 from config import ADMINS_TG, API_TOKEN
@@ -34,6 +32,7 @@ dp = Dispatcher(bot, storage=MemoryStorage())
 # Initialize scheduler
 scheduler = AsyncIOScheduler()
 scheduler.start()
+
 
 # Sructure of callback buttons
 button_cb = callback_data.CallbackData(
@@ -100,13 +99,25 @@ def is_message_private(message: Message) -> bool:
         return False
 
 
-#  -------------------------------------------------------------- ВХОД ТГ ЮЗЕРА
+async def send_message_to_admins(text: str):
+    for admin_id in ADMINS_TG:
+        await bot.send_message(
+            chat_id=admin_id,
+            text=text
+        )
+
+
+#  -------------------------------------------------------------- ФУНКЦИОНАЛ
 @dp.message_handler(
     lambda message: is_message_private(message),
     commands=['start'], state="*")
 async def start_command(message: Message, state: FSMContext):
     log.info('start command from: %r', message.from_user.id)
-
+    scheduler.add_job(
+        func=check_all_coins,
+        trigger='interval',
+        seconds=180
+    )
     await message.answer(text='hello_text')
 
 
@@ -344,7 +355,7 @@ async def callback_choise_market(
     await CustomerState.waiting_for_coin_name.set()
     await state.update_data(coin_name=coin_name)
     await state.update_data(market_name=market_name)
-    await query.message.answer(
+    await query.message.edit_text(
         f'Введите алтернативное имя {coin_name} для биржи {market_name}')
 
 
@@ -396,6 +407,30 @@ async def new_text(message: Message, state: FSMContext):
         text=text,
         reply_markup=keybord
     )
+
+
+#  ----------------------------------------------------- ДЕЙСТВИЯ ПО РАСПИСАНИЮ
+async def check_all_coins():
+    """начинает поиск сделки для всех монет"""
+    log.info('check_all_coins is starting')
+    for coin in Coin.get_all_coins():
+        try:
+            best_prices = Market.find_couple_for_best_deal(coin)
+        except CoinNotFound:
+            await send_message_to_admins(
+                f'Монета {coin.get_upper_name()} не найдена ни на одной бирже')
+            continue
+        if not best_prices:
+            log.info('couple for deal didnt find')
+            continue
+
+        text = (
+            f'Найден вариант для сделки\n\n'
+            f'{make_message_for_best_price(best_prices)}'
+        )
+        await send_message_to_admins(text)
+
+    log.info('check_all_coins ended')
 
 
 if __name__ == '__main__':

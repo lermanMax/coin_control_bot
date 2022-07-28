@@ -35,8 +35,8 @@ class Oneinch(Market):
     def get_cup(self, coin: Coin, base_coin: Coin, depth: int = 1) -> Cup:
         target_base_amount = 510
         base_amount, coin_amount = self._get_price_quote(
-            from_token_symbol=base_coin.get_upper_name(),
-            to_token_symbol=coin.get_upper_name(),
+            from_token_symbol=base_coin.get_upper_name(self),
+            to_token_symbol=coin.get_upper_name(self),
             amount=target_base_amount
         )
         ask_price = base_amount / coin_amount
@@ -44,8 +44,8 @@ class Oneinch(Market):
 
         coin_amount_int = int(coin_amount)
         coin_amount, base_amount = self._get_price_quote(
-            from_token_symbol=coin.get_upper_name(),
-            to_token_symbol=base_coin.get_upper_name(),
+            from_token_symbol=coin.get_upper_name(self),
+            to_token_symbol=base_coin.get_upper_name(self),
             amount=coin_amount_int
         )
         bid_price = base_amount / coin_amount
@@ -53,5 +53,6 @@ class Oneinch(Market):
         return Cup(asks, bids)
 
     def make_link_to_market(self, coin: Coin, base_coin: Coin) -> str:
-        market_name = f'{coin.get_upper_name()}/{base_coin.get_upper_name()}'
+        market_name = \
+            f'{coin.get_upper_name(self)}/{base_coin.get_upper_name(self)}'
         return f'https://www.app.1inch.io/#/1/classic/swap/{market_name}'
