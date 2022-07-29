@@ -34,11 +34,11 @@ scheduler = AsyncIOScheduler()
 scheduler.start()
 
 
-# Sructure of callback buttons
+# Structure of callback buttons
 button_cb = callback_data.CallbackData(
     'btn', 'question', 'answer', 'data')
 
-# Preparatons
+# Preparations
 Coin.update_coins_from_db()
 
 
@@ -67,7 +67,7 @@ def make_inline_keyboard(
 
     keyboard = InlineKeyboardMarkup()
     row = []
-    for answer in answers:  # make a botton for every answer
+    for answer in answers:  # make a button for every answer
         cb_data = button_cb.new(
             question=question,
             answer=answer,
@@ -196,7 +196,7 @@ async def callback_all_prices(
 def make_message_for_best_price(best_prices: BestPrice) -> str:
     coin = best_prices.best_ask.coin
 
-    procent = (
+    percent = (
         (best_prices.best_bid.number / best_prices.best_ask.number - 1)
         * 100
     )
@@ -215,7 +215,7 @@ def make_message_for_best_price(best_prices: BestPrice) -> str:
 
     text = (
         f'<b>{coin.get_upper_name()}</b>\n'
-        f'{round(procent, 2)}%\n'
+        f'{round(percent, 2)}%\n'
         f'<a href="{link_for_buy}">{market_for_buy}</a>'
         f' - {best_prices.best_ask.number}'
         f' {best_prices.best_ask.base_coin.get_name()}\n'
@@ -319,14 +319,14 @@ async def callback_alter_name(
         text += f'{market_name}: {alter_name} \n'
     text += '\nВыберете, к какому рынку вы хотите добавить имя для монеты'
 
-    keybord = make_inline_keyboard(
+    keyboard = make_inline_keyboard(
         question=button_alter_name,
         answers=Market.get_market_names(),
         data=coin_name
     )
     await query.message.edit_text(
         text=text,
-        reply_markup=keybord
+        reply_markup=keyboard
     )
 
 
@@ -399,13 +399,13 @@ async def new_text(message: Message, state: FSMContext):
     else:
         text = f'<b>{coin.get_upper_name()}</b>\n'
 
-    keybord = make_inline_keyboard(
+    keyboard = make_inline_keyboard(
         question=coin.get_name(),
         answers=buttons_for_coin
     )
     await message.answer(
         text=text,
-        reply_markup=keybord
+        reply_markup=keyboard
     )
 
 
@@ -421,7 +421,7 @@ async def check_all_coins():
                 f'Монета {coin.get_upper_name()} не найдена ни на одной бирже')
             continue
         if not best_prices:
-            log.info('couple for deal didnt find')
+            log.info("couple for deal wasn't found")
             continue
 
         text = (

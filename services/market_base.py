@@ -11,7 +11,7 @@ from .coin_db.db_config import DB_NAME
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-log = logging.getLogger('bisness_logic')
+log = logging.getLogger('business_logic')
 
 
 class CoinNotFound(Exception):
@@ -31,7 +31,7 @@ class Coin(Persistent):
 
     @classmethod
     def new_coin(cls, name: str) -> Coin:
-        """Adding coin and saveing it in memory.
+        """Adding coin and saving it in memory.
 
         Args:
             name (str): _description_
@@ -92,7 +92,7 @@ class Coin(Persistent):
         return self.name
 
     def put_new_name(self, name: str, market: Market) -> None:
-        """new alter spicific name for market"""
+        """new alter specific name for market"""
         self.alter_names[market.name] = name.lower()
         transaction.commit()
 
