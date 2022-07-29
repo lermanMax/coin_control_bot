@@ -71,7 +71,10 @@ class Coin(Persistent):
     def get_all_coins(cls) -> List[Coin]:
         return cls._all_coins
 
-    def __init__(self, name: str, alter_names: dict = {}):
+    def __init__(self, name: str, alter_names: dict = None):
+        if alter_names is None:
+            alter_names = {}
+
         self.name = name.lower()
         self.alter_names = PersistentDict()
 
