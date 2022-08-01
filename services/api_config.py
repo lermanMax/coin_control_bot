@@ -9,6 +9,7 @@ from .api_kucoin import Kucoin
 from .api_mexc import Mexc
 from .api_gate import Gate
 from .api_bitmart import BitMart
+from .api_bitrue import Bitrue
 
 # Initialization all Markets
 Huobi()
@@ -25,3 +26,4 @@ Kucoin()
 Mexc()
 Gate()
 BitMart()
+Bitrue()
