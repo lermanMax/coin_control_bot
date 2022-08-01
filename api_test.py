@@ -10,7 +10,8 @@ log = logging.getLogger('api_test')
 btc_coin = Coin(
     name='btc',
     alter_names={
-        '1inch': 'wbtc'
+        '1inch': 'wbtc',
+        'kraken': 'XBT'
     }
 )
 
