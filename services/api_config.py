@@ -10,6 +10,7 @@ from .api_mexc import Mexc
 from .api_gate import Gate
 from .api_bitmart import BitMart
 from .api_bitrue import Bitrue
+from .api_lbank import Lbank
 
 # Initialization all Markets
 Huobi()
@@ -27,3 +28,4 @@ Mexc()
 Gate()
 BitMart()
 Bitrue()
+Lbank()
