@@ -18,6 +18,7 @@ btc_coin = Coin(
 
 def test_all_markets():
     for market in Market.all_markets:
+        print('------')
         try:
             market.get_cup(
                 coin=btc_coin,
@@ -35,11 +36,27 @@ def test_all_markets():
             )
             log.info((
                 f'get_price() for {market.name} returned: '
-                f'{best_price.best_ask.number}'))
+                f'ask = {best_price.best_ask.number} '
+                f'bid = {best_price.best_ask.number} '
+            ))
         except Exception:
             log.error(f'get_price() for {market.name} does not work')
+            continue
 
-        print('------')
+        if type(best_price.best_ask.number) == float:
+            log.info('best_ask is float')
+        else:
+            log.error('best_ask is not float')
+        
+        if type(best_price.best_bid.number) == float:
+            log.info('best_bid is float')
+        else:
+            log.error('best_bid is not float')
+        
+        if best_price.best_ask.number > best_price.best_bid.number:
+            log.info('best_ask more then best_bid')
+        else:
+            log.error('best_bid more then best_ask')
 
 
 if __name__ == '__main__':
