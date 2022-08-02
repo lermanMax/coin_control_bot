@@ -116,7 +116,7 @@ async def start_command(message: Message, state: FSMContext):
     scheduler.add_job(
         func=check_all_coins,
         trigger='interval',
-        seconds=180
+        seconds=360
     )
     await message.answer(text='hello_text')
 
@@ -136,7 +136,7 @@ def make_keyboard_with_coins() -> ReplyKeyboardMarkup:
     lambda message: is_message_private(message),
     commands=['all_coins'], state="*")
 async def all_coins_command(message: Message, state: FSMContext):
-    log.info('start command from: %r', message.from_user.id)
+    log.info('all_coins_command from: %r', message.from_user.id)
     text = '<b>Все монеты:</b>\n'
     for coin in Coin.get_all_coins():
         text += f'{coin.get_upper_name()}\n'
@@ -187,10 +187,9 @@ async def callback_all_prices(
         if not text_price:
             text_price = 'not_found'
         text += f'{market.name} - {text_price}\n'
-
-    await query.message.edit_text(
-        text=text
-    )
+        await query.message.edit_text(
+            text=text
+        )
 
 
 def make_message_for_best_price(best_prices: BestPrice) -> str:
