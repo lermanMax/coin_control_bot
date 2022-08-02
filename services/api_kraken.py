@@ -15,10 +15,10 @@ class Kraken(Market):
         payload = {'pair': pair, 'count': depth}
         resp = requests.get('https://api.kraken.com/0/public/Depth',
                             params=payload)
-        rjson = resp.json()
+        rjson = resp.json()['result'][pair]
 
-        asks_json = rjson['result'][pair]['asks']
-        bids_json = rjson['result'][pair]['bids']
+        asks_json = rjson['asks']
+        bids_json = rjson['bids']
 
         asks = [CupEntry(float(entry[0]), float(entry[1]))
                 for entry in asks_json]

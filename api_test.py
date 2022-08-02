@@ -37,7 +37,7 @@ def test_all_markets():
             log.info((
                 f'get_price() for {market.name} returned: '
                 f'ask = {best_price.best_ask.number} '
-                f'bid = {best_price.best_ask.number} '
+                f'bid = {best_price.best_bid.number} '
             ))
         except Exception:
             log.error(f'get_price() for {market.name} does not work')
@@ -54,9 +54,9 @@ def test_all_markets():
             log.error('best_bid is not float')
         
         if best_price.best_ask.number > best_price.best_bid.number:
-            log.info('best_ask more then best_bid')
+            log.info('best_ask more than best_bid')
         else:
-            log.error('best_bid more then best_ask')
+            log.error('best_bid more than best_ask')
 
 
 if __name__ == '__main__':

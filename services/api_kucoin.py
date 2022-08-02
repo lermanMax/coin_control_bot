@@ -22,8 +22,10 @@ class Kucoin(Market):
         asks_json = rjson['asks']
         bids_json = rjson['bids']
 
-        asks = [CupEntry(entry[0], entry[1]) for entry in asks_json]
-        bids = [CupEntry(entry[0], entry[1]) for entry in bids_json]
+        asks = [CupEntry(float(entry[0]), float(entry[1]))
+                for entry in asks_json]
+        bids = [CupEntry(float(entry[0]), float(entry[1]))
+                for entry in bids_json]
 
         return Cup(asks[0:depth], bids[0:depth])
 
