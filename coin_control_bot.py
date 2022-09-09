@@ -14,12 +14,12 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.types.message import ContentType
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers import combining, interval, cron
+from apscheduler.triggers import cron
 
 # Import modules of this project
 from config import ADMINS_TG, API_TOKEN
-from services.api_oneinch import Oneinch
-from services.market_base import BestPrice, Coin, CoinNotFound, Market, MarketTimeOut
+from services.market_base import BestPrice, Coin, CoinNotFound, \
+    Market, MarketTimeOut
 import services.api_config
 
 
@@ -118,11 +118,22 @@ async def send_message_to_admins(
 
 
 #  -------------------------------------------------------------- ФУНКЦИОНАЛ
+async def user_from_white_list(message: Message) -> bool:
+    if message.from_user.id in ADMINS_TG:
+        return True
+    else:
+        log.info('message from NOT admin: %r', message.from_user.id)
+        await message.answer('ауф-АУФ!')
+        return False
+
+
 @dp.message_handler(
     lambda message: is_message_private(message),
     commands=['start'], state="*")
 async def start_command(message: Message, state: FSMContext):
     log.info('start command from: %r', message.from_user.id)
+    if not await user_from_white_list(message):
+        return
     scheduler.remove_all_jobs()
     trigger = cron.CronTrigger(
         minute='1-59', hour='0,1,8-23', timezone='Europe/Moscow')
@@ -139,8 +150,23 @@ async def start_command(message: Message, state: FSMContext):
     commands=['stop'], state="*")
 async def stop_command(message: Message, state: FSMContext):
     log.info('stop command from: %r', message.from_user.id)
+    if not await user_from_white_list(message):
+        return
     scheduler.remove_all_jobs()
     await message.answer(text='Поиск сделок остановлен')
+
+
+@dp.message_handler(
+    lambda message: is_message_private(message),
+    commands=['restart'], state="*")
+async def restart_command(message: Message, state: FSMContext):
+    log.info('restart command from: %r', message.from_user.id)
+    if not await user_from_white_list(message):
+        return
+    scheduler.remove_all_jobs()
+    Market.clear_cache()
+    await message.answer('Сканер перезагружен')
+    await start_command(message, state)
 
 
 def make_keyboard_with_coins() -> ReplyKeyboardMarkup:
@@ -159,6 +185,8 @@ def make_keyboard_with_coins() -> ReplyKeyboardMarkup:
     commands=['all_coins'], state="*")
 async def all_coins_command(message: Message, state: FSMContext):
     log.info('all_coins_command from: %r', message.from_user.id)
+    if not await user_from_white_list(message):
+        return
     text = '<b>Все монеты:</b>\n'
     for coin in Coin.get_all_coins():
         text += f'{coin.get_upper_name()}\n'
@@ -173,6 +201,8 @@ async def all_coins_command(message: Message, state: FSMContext):
     commands=['clear'], state="*")
 async def clear_command(message: Message, state: FSMContext):
     log.info('clear from: %r', message.from_user.id)
+    if not await user_from_white_list(message):
+        return
     await message.answer(text="remove", reply_markup=ReplyKeyboardRemove)
 
 
@@ -477,6 +507,8 @@ async def new_address_for_coin(message: Message, state: FSMContext):
     state="*")
 async def new_text(message: Message, state: FSMContext):
     log.info('new_coin_name from: %r', message.from_user.id)
+    if not await user_from_white_list(message):
+        return
     if len(message.text) > 17:
         await message.reply('Ошибка: слишком длинное название монеты')
         return

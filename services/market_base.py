@@ -19,6 +19,7 @@ log = logging.getLogger('business_logic')
 class CoinNotFound(Exception):
     pass
 
+
 class MarketTimeOut(Exception):
     pass
 
@@ -269,6 +270,12 @@ class Market:
             return
 
         return prices
+
+    @classmethod
+    def clear_cache(cls) -> None:
+        """Очишает данные хранящиеся в оперативке"""
+        for market in cls.all_markets:
+            market.info_non_existent_coins.clear()
 
     def __init__(self, name: str) -> None:
         self.name = name
