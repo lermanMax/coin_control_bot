@@ -13,6 +13,8 @@ class Crypto(Market):
     # параметр depth не срабатывает, поэтому entries обрезаются уже на выходе
     # без подписки доступно только depth <= 10
     def get_cup(self, coin: Coin, base_coin: Coin, depth: int = 1) -> Cup:
+        if depth > 10:
+            depth = 10
         symbol = self.make_name_for_market(coin, base_coin)
         payload = {'instrument_name': symbol, 'depth': str(depth)}
         resp = requests.get('https://api.crypto.com/v2/public/get-book',

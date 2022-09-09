@@ -11,7 +11,8 @@ btc_coin = Coin(
     name='btc',
     alter_names={
         '1inch': 'wbtc',
-        'kraken': 'XBT'
+        'kraken': 'XBT',
+        'Pancakeswap': 'btcb'
     }
 )
 

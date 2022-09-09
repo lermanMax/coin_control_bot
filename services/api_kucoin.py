@@ -13,6 +13,8 @@ class Kucoin(Market):
     # можно запросить только depth=20 или depth=100 ->
     # будет запрашиваться 20 и обрезаться при необходимости на выходе
     def get_cup(self, coin: Coin, base_coin: Coin, depth: int = 1) -> Cup:
+        if depth > 20:
+            depth = 20
         symbol = self.make_name_for_market(coin, base_coin)
         payload = {'symbol': symbol}
         resp = requests.get('https://api.kucoin.com/api/v1/market'

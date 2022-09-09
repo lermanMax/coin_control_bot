@@ -10,7 +10,7 @@ class Huobi(Market):
         self.market_client = MarketClient()
 
     def make_name_for_market(self, coin: Coin, base_coin: Coin) -> str:
-        return f'{coin.get_name(self)}{base_coin.get_name()}'
+        return f'{coin.get_name(self)}{base_coin.get_name(self)}'
 
     def get_cup(self, coin: Coin, base_coin: Coin, depth: int = 1) -> Cup:
         symbol = self.make_name_for_market(coin, base_coin)
@@ -24,5 +24,5 @@ class Huobi(Market):
         return Cup(asks, bids)
 
     def make_link_to_market(self, coin: Coin, base_coin: Coin) -> str:
-        market_name = f'{coin.get_name()}_{base_coin.get_name()}'
+        market_name = f'{coin.get_name(self)}_{base_coin.get_name(self)}'
         return f'https://www.huobi.com/exchange/{market_name}'

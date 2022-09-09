@@ -1,3 +1,5 @@
+import requests
+import json
 from python_1inch import OneInchExchange
 
 from .market_base import Market, Coin, Cup, CupEntry
@@ -32,8 +34,28 @@ class Oneinch(Market):
         )
         return (fromTokenAmount, toTokenAmount)
 
+    def _add_coin_to_tokenbook(self, coin: Coin):
+        url = '{}/{}/{}/quote'.format(
+            self.exchange.base_url,
+            self.exchange.version,
+            self.exchange.chain_id)
+        url = url + '?fromTokenAddress={}&toTokenAddress={}&amount={}'.format(
+            coin.address,
+            self.exchange.tokens['USDT']['address'],
+            10_000_000_000_000_000)
+        response = requests.get(url)
+        token = json.loads(response.text)['fromToken']
+        coin.put_new_name(
+            name=token['symbol'],
+            market=self
+        )
+        self.exchange.tokens[coin.get_upper_name(self)] = token
+
     def get_cup(self, coin: Coin, base_coin: Coin, depth: int = 1) -> Cup:
         target_base_amount = 510
+        if coin.address and (
+                coin.get_upper_name(self) not in self.exchange.tokens):
+            self._add_coin_to_tokenbook(coin)
         base_amount, coin_amount = self._get_price_quote(
             from_token_symbol=base_coin.get_upper_name(self),
             to_token_symbol=coin.get_upper_name(self),
@@ -55,4 +77,4 @@ class Oneinch(Market):
     def make_link_to_market(self, coin: Coin, base_coin: Coin) -> str:
         market_name = \
             f'{coin.get_upper_name(self)}/{base_coin.get_upper_name(self)}'
-        return f'https://www.app.1inch.io/#/1/classic/swap/{market_name}'
+        return f'https://app.1inch.io/#/1/classic/swap/{market_name}'

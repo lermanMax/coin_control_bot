@@ -1,6 +1,8 @@
 from __future__ import annotations
 from typing import List, NamedTuple, Tuple
 import logging
+from datetime import datetime
+from signal import signal, SIGALRM, alarm
 
 from persistent import Persistent
 from persistent.dict import PersistentDict
@@ -15,6 +17,9 @@ log = logging.getLogger('business_logic')
 
 
 class CoinNotFound(Exception):
+    pass
+
+class MarketTimeOut(Exception):
     pass
 
 
@@ -71,11 +76,15 @@ class Coin(Persistent):
     def get_all_coins(cls) -> List[Coin]:
         return cls._all_coins
 
-    def __init__(self, name: str, alter_names: dict = None):
+    def __init__(
+            self, name: str,
+            address: str = None,
+            alter_names: dict = None):
         if alter_names is None:
             alter_names = {}
 
         self.name = name.lower()
+        self.address = address
         self.alter_names = PersistentDict()
 
         for market_name, name in alter_names.items():
@@ -91,9 +100,17 @@ class Coin(Persistent):
                 return self.alter_names[market.name]
         return self.name
 
+    def get_address(self) -> str:
+        return self.address
+
     def put_new_name(self, name: str, market: Market) -> None:
         """new alter specific name for market"""
         self.alter_names[market.name] = name.lower()
+        transaction.commit()
+
+    def put_new_address(self, address: str) -> None:
+        """new alter specific name for market"""
+        self.address = address
         transaction.commit()
 
 
@@ -132,10 +149,12 @@ class BestPrice(NamedTuple):
 
 class Market:
     all_markets: List[Market] = []
+    timeout_for_get = 3  # sec
 
     usd_coin = Coin('usd')
     usdt_coin = Coin('usdt')
-    base_coins = (usd_coin, usdt_coin)
+    usdc_coin = Coin('usdc')
+    base_coins = (usd_coin, usdt_coin, usdc_coin)
 
     @classmethod
     def get_market_names(cls) -> Tuple[str]:
@@ -162,14 +181,20 @@ class Market:
         Returns:
             BestPrice: цена на покупку и продажу
         """
-        best_ask = None
-        best_bid = None
+        log.info('started serching prices')
+        best_ask: Price = None
+        best_bid: Price = None
         for market in cls.all_markets:
             for base_coin in cls.base_coins:
                 try:
                     price = market.get_price(coin, base_coin)
                 except CoinNotFound:
                     continue
+                except MarketTimeOut:
+                    continue
+                # print(
+                #     f'best_ask:{price.best_ask.number}{price.best_ask.base_coin.get_upper_name()}{price.best_ask.market.name}'
+                #     f'\nbest_bid:{price.best_bid.number}{price.best_bid.base_coin.get_upper_name()}{price.best_bid.market.name}')
 
                 if not best_bid:
                     best_ask = price.best_ask
@@ -187,7 +212,7 @@ class Market:
         return BestPrice(best_ask=best_ask, best_bid=best_bid)
 
     @classmethod
-    def find_couple_for_best_deal(cls, coin: Coin) -> BestPrice:
+    async def find_couple_for_best_deal(cls, coin: Coin) -> BestPrice:
         """ находит лучшую цену с достаточным объемом
         Raises:
             CoinNotFound: монета не существует ни где
@@ -200,6 +225,7 @@ class Market:
         minimal_profit = 0.02  # %
 
         prices = cls.get_best_price(coin)
+        log.info('started price control')
         if not prices:
             return
         if ((prices.best_bid.number / prices.best_ask.number)
@@ -248,6 +274,30 @@ class Market:
         self.name = name
         self.__class__.all_markets.append(self)
 
+        self.date_info = datetime.today().date()
+        self.info_non_existent_coins = []
+
+    def handler_timeout(self, signum, frame):
+        raise MarketTimeOut(f'time for {self.name} is out')
+
+    def is_info_topical(self) -> bool:
+        if self.date_info == datetime.today().date():
+            return True
+        else:
+            self.date_info = datetime.today().date()
+            self.info_non_existent_coins = []
+            return False
+
+    def coin_not_exist(self, coin: Coin, base_coin: Coin) -> bool:
+        """если пара в списке несуществующих на этой бирже
+        и информация акутальная (сегодняшняя)
+        """
+        pair_name = f'{coin.get_name(self)}{base_coin.get_name(self)}'
+        if pair_name in self.info_non_existent_coins:
+            if self.is_info_topical():
+                return True
+        return False
+
     def get_price(self, coin: Coin, base_coin: Coin) -> BestPrice:
         """выдает цену койна в базовой валюте
 
@@ -261,10 +311,23 @@ class Market:
         Returns:
             BestPrice: цена на покупку и продажу
         """
+        if self.coin_not_exist(coin, base_coin):
+            raise CoinNotFound
+
+        log.info(f'get price from: {self.name}')
+        signal(SIGALRM, self.handler_timeout)
+        alarm(self.timeout_for_get)
         try:
             cup = self.get_cup(coin, base_coin)
+        except MarketTimeOut:
+            raise MarketTimeOut
         except Exception:
+            alarm(0)
+            self.info_non_existent_coins.append(
+                f'{coin.get_name(self)}{base_coin.get_name(self)}'
+            )
             raise CoinNotFound
+        alarm(0)
 
         if cup.asks:
             best_ask = cup.asks[0].price
