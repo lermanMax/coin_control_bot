@@ -1,4 +1,5 @@
 # Coin control bot
+Application for monitoring the best offers on exchanges. At regular intervals, it checks the marketplaces and, if it finds a good offer, sends a notification to the user. 
 
 installation:
 
